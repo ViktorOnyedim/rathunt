@@ -13,6 +13,9 @@ const int MAP_HEIGHT = 8;
 const double FOV = 60 * M_PI / 180;
 const int NUM_RAYS = SCREEN_WIDTH;
 
+// Rotation constants
+const double ROTATION_SPEED = 0.05;
+const double MOUSE_SENSITIVITY = 0.002;
 
 // Define map
 std::vector<std::vector<int>> map = {
@@ -159,7 +162,7 @@ int main( int argc, char* args[] ) {
                     if( e.type == SDL_QUIT ) {
                         quit = true; 
                     } else if (e.type == SDL_MOUSEMOTION) {
-                        player.angle += e.motion.xrel;
+                        player.angle += e.motion.xrel * MOUSE_SENSITIVITY;
                     }
                 } 
 
