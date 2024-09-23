@@ -1,6 +1,8 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
+#include <cmath>
 #include<vector>
+using namespace std;
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
@@ -12,7 +14,7 @@ const double FOV = 60 * M_PI / 180;
 const int NUM_RAYS = SCREEN_WIDTH;
 
 // Define map
-int map[MAP_HEIGHT][MAP_WIDTH] = {
+std::vector<std::vector<int>> map = {
     {1, 1, 1, 1, 1, 1, 1, 1},
 	{1, 0, 0, 0, 0, 0, 0, 1},
 	{1, 0, 0, 0, 0, 0, 0, 1},
@@ -24,16 +26,18 @@ int map[MAP_HEIGHT][MAP_WIDTH] = {
 };
 
 // player's position on the map
-double playerX = 1.5;
-double playerY = 1.5;
-double angle = 0; // camera angle
+struct Player {
+    double x = 1.5;
+    double y = 1.5;
+    double angle = 0; // camera angle
+};
 
-void castRay(SDL_Renderer* renderer, double rayAngle, int rayNum) {
+void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int rayNum) {
     double rayDirX = cos(rayAngle);
 	double rayDirY = sin(rayAngle);
 
-    int mapX = floor(playerX);
-	int mapY = floor(playerY);
+    int mapX = static_cast<int>(player.x);
+	int mapY = static_cast<int>(player.y);
 
     double sideDistX;
 	double sideDistY;
@@ -103,13 +107,9 @@ void castRay(SDL_Renderer* renderer, double rayAngle, int rayNum) {
 
 
 
-int main( int argc, char* args[] )
-{
+int main( int argc, char* args[] ) {
     //The window we'll be rendering to
     SDL_Window* window = NULL;
-    
-    //The surface contained by the window
-    SDL_Surface* screenSurface = NULL;
 
     //Initialize SDL
     if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
@@ -124,8 +124,10 @@ int main( int argc, char* args[] )
             printf( "Window could not be created! SDL_Error: %s\n", SDL_GetError() );
         } else
         {
-            
+        
             SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+            
+            // Player player;
 
             //Hack to get window to stay up
             SDL_Event e;
@@ -142,8 +144,11 @@ int main( int argc, char* args[] )
                     castRay(renderer, rayAngle, x);
                 }
             }
+            SDL_DestroyRenderer(renderer);
         }
     }
+    
+
     //Destroy window
     SDL_DestroyWindow( window );
 
