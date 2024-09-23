@@ -13,6 +13,7 @@ const int MAP_HEIGHT = 8;
 const double FOV = 60 * M_PI / 180;
 const int NUM_RAYS = SCREEN_WIDTH;
 
+
 // Define map
 std::vector<std::vector<int>> map = {
     {1, 1, 1, 1, 1, 1, 1, 1},
@@ -146,13 +147,23 @@ int main( int argc, char* args[] ) {
             
             Player player;
 
+            // get relative motion data in SDL_MOUSEMOTION events.
+            SDL_SetRelativeMouseMode(SDL_TRUE);
+
             //Hack to get window to stay up
             SDL_Event e;
+        
             bool quit = false;
             while( quit == false ) { 
                 while( SDL_PollEvent( &e ) ) { 
-                    if( e.type == SDL_QUIT ) quit = true; 
-                }
+                    if( e.type == SDL_QUIT ) {
+                        quit = true; 
+                    } else if (e.type == SDL_MOUSEMOTION) {
+                        player.angle += e.motion.xrel;
+                    }
+                } 
+
+
                 SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
                 SDL_RenderClear(renderer);
 
