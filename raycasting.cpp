@@ -1,9 +1,36 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
+#include<vector>
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
+
+const int MAP_WIDTH = 8;
+const int MAP_HEIGHT = 8;
+const double FOV = 60 * M_PI / 180;
+const int NUM_RAYS = SCREEN_WIDTH;
+
+// Define map
+int map[MAP_HEIGHT][MAP_WIDTH] = {
+    {1, 1, 1, 1, 1, 1, 1, 1},
+	{1, 0, 0, 0, 0, 0, 0, 1},
+	{1, 0, 0, 0, 0, 0, 0, 1},
+	{1, 0, 1, 1, 1, 0, 0, 1},
+	{1, 0, 1, 0, 1, 0, 0, 1},
+	{1, 0, 1, 1, 1, 0, 0, 1},
+	{1, 0, 0, 0, 0, 0, 0, 1},
+	{1, 1, 1, 1, 1, 1, 1, 1}
+};
+
+// player's position on the map
+double playerX = 1.5;
+double playerY = 1.5;
+double angle = 0; // camera angle
+
+
+
+
 
 int main( int argc, char* args[] )
 {
