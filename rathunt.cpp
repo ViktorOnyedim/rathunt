@@ -32,6 +32,8 @@ struct Player {
     double angle = 0; // camera angle
 };
 
+
+
 void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int rayNum) {
     double rayDirX = cos(rayAngle);
 	double rayDirY = sin(rayAngle);
@@ -52,18 +54,18 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
 
     if (rayDirX < 0) {
 		stepX = -1;
-		sideDistX = (playerX - mapX) * deltaDistX;
+		sideDistX = (player.x - mapX) * deltaDistX;
 	} else {
 		stepX = 1;
-		sideDistX = (mapX + 1.0 - playerX) * deltaDistX;
+		sideDistX = (mapX + 1.0 - player.x) * deltaDistX;
 	}
 
 	if (rayDirY < 0) {
         stepY = -1;
-        sideDistY = (playerY - mapY) * deltaDistY;
+        sideDistY = (player.y - mapY) * deltaDistY;
     } else {
         stepY = 1;
-        sideDistY = (mapY + 1.0 - playerY) * deltaDistY;
+        sideDistY = (mapY + 1.0 - player.y) * deltaDistY;
     }
 
     while (hitWall == 0) {
@@ -78,10 +80,11 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
         }
         if (map[mapY][mapX] > 0) hitWall = 1;
     }
+
     if (side == 0) {
-        perpWallDist = (mapX - playerX + (1 - stepX) / 2) / rayDirX;
+        perpWallDist = (mapX - player.x + (1 - stepX) / 2) / rayDirX;
     } else {
-        perpWallDist = (mapY - playerY + (1 - stepY) / 2) / rayDirY;
+        perpWallDist = (mapY - player.y + (1 - stepY) / 2) / rayDirY;
     }
 
     int lineHeight = static_cast<int>(SCREEN_HEIGHT / perpWallDist);
@@ -90,18 +93,22 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
     int drawEnd = lineHeight / 2 + SCREEN_HEIGHT / 2;
     if (drawEnd >= SCREEN_HEIGHT) drawEnd = SCREEN_HEIGHT - 1;
 
+    
+    int x = rayNum;
+    int y1 = drawStart;
+    int y2 = drawEnd;
+
+    
     // Drawing wall
     Uint8 wallColor = static_cast<Uint8>(255 / (1 + perpWallDist * perpWallDist * 0.1));
+    SDL_SetRenderDrawColor(renderer, wallColor, wallColor, wallColor, 255);
+    SDL_RenderDrawLine(renderer, x, y1, x, y2);
+
+
+    // Drawing ceiling
+    SDL_SetRenderDrawColor(renderer, 135, 206, 235, 255);
+    SDL_RenderDrawLine(renderer, x, 0, x, y1);
     
-    Uint8 r = 3; 
-    Uint8 g = 3; 
-    Uint8 b = 3; 
-    int y1 = 0;
-    int y2 = drawStart;
-
-    SDL_SetRenderDrawColor(renderer, r, g, b, 255);
-    SDL_RenderDrawLine(renderer, rayNum, y1, rayNum, y2);
-
     
 }
 
@@ -127,7 +134,7 @@ int main( int argc, char* args[] ) {
         
             SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
             
-            // Player player;
+            Player player;
 
             //Hack to get window to stay up
             SDL_Event e;
@@ -140,9 +147,10 @@ int main( int argc, char* args[] ) {
                 SDL_RenderClear(renderer);
 
                 for (int x = 0; x < NUM_RAYS; x++) {
-                    double rayAngle = angle - FOV / 2 + FOV * x / static_cast<double>(NUM_RAYS);
-                    castRay(renderer, rayAngle, x);
+                    double rayAngle = player.angle - FOV / 2 + FOV * x / static_cast<double>(NUM_RAYS);
+                    castRay(renderer, player, rayAngle, x);
                 }
+                SDL_RenderPresent(renderer);
             }
             SDL_DestroyRenderer(renderer);
         }
