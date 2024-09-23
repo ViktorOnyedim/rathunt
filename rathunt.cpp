@@ -29,7 +29,7 @@ std::vector<std::vector<int>> map = {
 struct Player {
     double x = 1.5;
     double y = 1.5;
-    double angle = 0; // camera angle
+    double angle = 0.0; // camera angle
 };
 
 
@@ -99,11 +99,19 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
     int y2 = drawEnd;
 
     
-    // Drawing wall
-    Uint8 wallColor = static_cast<Uint8>(255 / (1 + perpWallDist * perpWallDist * 0.1));
-    SDL_SetRenderDrawColor(renderer, wallColor, wallColor, wallColor, 255);
-    SDL_RenderDrawLine(renderer, x, y1, x, y2);
+    // Drawing wall - add color based on orientation of wall
 
+    // EAST & WEST walls
+    if (side == 0) {
+        SDL_SetRenderDrawColor(renderer, 0, 10, 0, 255);
+        SDL_RenderDrawLine(renderer, x, y1, x, y2);
+    } else {
+    // NORTH & SOUTH
+        SDL_SetRenderDrawColor(renderer, 152, 133, 88, 255);
+        SDL_RenderDrawLine(renderer, x, y1, x, y2);
+    }
+    
+    
 
     // Drawing ceiling
     SDL_SetRenderDrawColor(renderer, 135, 206, 235, 255);
