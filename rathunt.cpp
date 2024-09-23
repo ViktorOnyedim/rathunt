@@ -135,8 +135,8 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
 }
 
 void move_player(Player& player, double dirX, double dirY) {
-    double newX = player.x + dirX;
-    double newY = player.y + dirY;
+    double newX = player.x + dirX * MOVEMENT_SPEED;
+    double newY = player.y + dirY * MOVEMENT_SPEED;
 
     // Detect collision
 
@@ -177,6 +177,9 @@ int main( int argc, char* args[] ) {
             // get relative motion data in SDL_MOUSEMOTION events.
             SDL_SetRelativeMouseMode(SDL_TRUE);
 
+            //
+            const Uint8* key_state = SDL_GetKeyboardState(NULL);
+
             //Hack to get window to stay up
             SDL_Event e;
         
@@ -200,6 +203,13 @@ int main( int argc, char* args[] ) {
                         }
                     }
                 } 
+
+                // Update player direction and camera plane
+
+                // Handle player movement
+                if (key_state[SDL_SCANCODE_W]) {
+                    move_player(player, player.dirX, player.dirY);
+                }
 
 
                 SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
