@@ -17,6 +17,9 @@ const int NUM_RAYS = SCREEN_WIDTH;
 const double ROTATION_SPEED = 0.05;
 const double MOUSE_SENSITIVITY = 0.002;
 
+// Movement constant
+const double MOVEMENT_SPEED = 0.05;
+
 // Define map
 std::vector<std::vector<int>> map = {
     {1, 1, 1, 1, 1, 1, 1, 1},
@@ -34,6 +37,10 @@ struct Player {
     double x = 1.5;
     double y = 1.5;
     double angle = 0.0; // camera angle
+    double dirX = 1.0;
+    double dirY = 0.0;
+    double planeX = 0.0;
+    double planeY = 0.66;
 };
 
 
@@ -163,6 +170,17 @@ int main( int argc, char* args[] ) {
                         quit = true; 
                     } else if (e.type == SDL_MOUSEMOTION) {
                         player.angle += e.motion.xrel * MOUSE_SENSITIVITY;
+                    } else if (e.type == SDL_KEYDOWN) {
+                        switch (e.key.keysym.sym)
+                        {
+                        case SDLK_LEFT:
+                            player.angle -= ROTATION_SPEED;
+                            break;
+                        case SDLK_RIGHT:
+                            player.angle += ROTATION_SPEED;
+                        default:
+                            break;
+                        }
                     }
                 } 
 
