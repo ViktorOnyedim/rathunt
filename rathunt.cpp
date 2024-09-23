@@ -37,6 +37,7 @@ struct Player {
     double x = 1.5;
     double y = 1.5;
     double angle = 0.0; // camera angle
+    // Direction vectors
     double dirX = 1.0;
     double dirY = 0.0;
     double planeX = 0.0;
@@ -131,6 +132,22 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
     // Drawing floor
     SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
     SDL_RenderDrawLine(renderer, x, y2, x, SCREEN_HEIGHT);
+}
+
+void move_player(Player& player, double dirX, double dirY) {
+    double newX = player.x + dirX;
+    double newY = player.y + dirY;
+
+    // Detect collision
+
+    /* check if the space the player is trying to move to 
+    along the y-axis) is not blocked */
+    if (map[newY][player.x] == 0) {
+        player.y = newY;
+    }
+    if (map[player.y][newX] == 0) {
+        player.x = newX;
+    }
 }
 
 
