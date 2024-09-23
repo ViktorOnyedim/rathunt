@@ -17,7 +17,7 @@ const int NUM_RAYS = SCREEN_WIDTH;
 std::vector<std::vector<int>> map = {
     {1, 1, 1, 1, 1, 1, 1, 1},
 	{1, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 1},
+	{1, 0, 1, 1, 0, 1, 0, 1},
 	{1, 0, 1, 1, 1, 0, 0, 1},
 	{1, 0, 1, 0, 1, 0, 0, 1},
 	{1, 0, 1, 1, 1, 0, 0, 1},
@@ -109,7 +109,9 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
     SDL_SetRenderDrawColor(renderer, 135, 206, 235, 255);
     SDL_RenderDrawLine(renderer, x, 0, x, y1);
     
-    
+    // Drawing floor
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
+    SDL_RenderDrawLine(renderer, x, y2, x, SCREEN_HEIGHT);
 }
 
 
