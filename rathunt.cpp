@@ -210,6 +210,16 @@ int main( int argc, char* args[] ) {
                 if (key_state[SDL_SCANCODE_W]) {
                     move_player(player, player.dirX, player.dirY);
                 }
+                if (key_state[SDL_SCANCODE_S]) {
+                    move_player(player, -player.dirX, -player.dirY);
+                }
+                if (key_state[SDL_SCANCODE_D]) {
+                    move_player(player, -player.dirY, player.dirX);
+                }
+                if (key_state[SDL_SCANCODE_A]) {
+                    move_player(player, player.dirY, -player.dirX);
+                }
+
 
 
                 SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
