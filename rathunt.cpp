@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
 #include <cmath>
 #include<vector>
@@ -19,6 +20,10 @@ const double MOUSE_SENSITIVITY = 0.002;
 
 // Movement constant
 const double MOVEMENT_SPEED = 0.05;
+
+const int TEXTURE_WIDTH = 64;
+const int TEXTURE_HEIGHT = 64;
+const int NUM_TEXTURES = 4;
 
 // Define map
 std::vector<std::vector<int>> map = {
@@ -150,6 +155,47 @@ void move_player(Player& player, double dirX, double dirY) {
     }
 }
 
+SDL_Texture* textures[NUM_TEXTURES];
+SDL_Texture* weaponTexture;
+
+void loadTextures(SDL_Renderer* renderer) {
+    
+    // Load weapon texture
+    SDL_Surface* weaponSurface = IMG_Load("weapon.png");
+    if (!weaponSurface) {
+        printf("Failed to load weapon texture: %s\n", SDL_GetError());
+        exit(1);
+    }
+    weaponTexture = SDL_CreateTextureFromSurface(renderer, weaponSurface);
+    SDL_FreeSurface(weaponSurface);
+}
+
+void renderWeapon(SDL_Renderer* renderer) {
+    int weaponWidth = SCREEN_WIDTH / 2;
+    int weaponHeight = SCREEN_HEIGHT / 2;
+    int weaponX = (SCREEN_WIDTH - weaponWidth) / 2;
+    int weaponY = SCREEN_HEIGHT - weaponHeight;
+
+    SDL_Rect dstRect = {weaponX, weaponY, weaponWidth, weaponHeight};
+    SDL_RenderCopy(renderer, weaponTexture, NULL, &dstRect);
+}
+
+void render(SDL_Renderer* renderer, const Player& player) {
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_RenderClear(renderer);
+
+    for (int x = 0; x < NUM_RAYS; x++) {
+        double cameraX = 2 * x / static_cast<double>(SCREEN_WIDTH) - 1;
+        double rayDirX = player.dirX + player.planeX * cameraX;
+        double rayDirY = player.dirY + player.planeY * cameraX;
+        double rayAngle = atan2(rayDirY, rayDirX);
+        castRay(renderer, player, rayAngle, x);
+    }
+
+    renderWeapon(renderer);
+
+    SDL_RenderPresent(renderer);
+}
 
 
 int main( int argc, char* args[] ) {
@@ -172,6 +218,7 @@ int main( int argc, char* args[] ) {
         
             SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
             
+            loadTextures(renderer);
             Player player;
 
             // get relative motion data in SDL_MOUSEMOTION events.
@@ -224,18 +271,8 @@ int main( int argc, char* args[] ) {
                     move_player(player, player.dirY, -player.dirX);
                 }
 
+                render(renderer, player);
                 
-
-
-
-                SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-                SDL_RenderClear(renderer);
-
-                for (int x = 0; x < NUM_RAYS; x++) {
-                    double rayAngle = player.angle - FOV / 2 + FOV * x / static_cast<double>(NUM_RAYS);
-                    castRay(renderer, player, rayAngle, x);
-                }
-                SDL_RenderPresent(renderer);
             }
             SDL_DestroyRenderer(renderer);
         }
