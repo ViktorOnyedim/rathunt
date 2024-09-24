@@ -205,6 +205,10 @@ int main( int argc, char* args[] ) {
                 } 
 
                 // Update player direction and camera plane
+                player.dirX = cos(player.angle);
+                player.dirY = sin(player.angle);
+                player.planeX = -player.dirY * 0.66;
+                player.planeY = player.dirX * 0.66;
 
                 // Handle player movement
                 if (key_state[SDL_SCANCODE_W]) {
@@ -219,6 +223,8 @@ int main( int argc, char* args[] ) {
                 if (key_state[SDL_SCANCODE_A]) {
                     move_player(player, player.dirY, -player.dirX);
                 }
+
+                
 
 
 
