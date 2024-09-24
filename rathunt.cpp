@@ -274,6 +274,10 @@ int main( int argc, char* args[] ) {
                 render(renderer, player);
                 
             }
+            SDL_DestroyTexture(weaponTexture);
+            for (int i = 0; i < NUM_TEXTURES; i++) {
+                SDL_DestroyTexture(textures[i]);
+            }   
             SDL_DestroyRenderer(renderer);
         }
     }
