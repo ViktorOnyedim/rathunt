@@ -25,14 +25,7 @@ const double COLLISION_MARGIN = 0.1;
 const int TEXTURE_WIDTH = 64;
 const int TEXTURE_HEIGHT = 64;
 const int NUM_TEXTURES = 4;
- // Load floor texture
-    SDL_Surface* floor_surface = IMG_Load("greystone.png");
-    if(!floor_surface) {
-        printf("Failed to load floor texture: %s\n", SDL_GetError());
-        exit(1);
-    }
-    textures[NUM_TEXTURES - 1] = SDL_CreateTextureFromSurface(renderer, floor_surface);
-    SDL_FreeSurface(floor_surface);
+
 // Define map
 std::vector<std::vector<int>> map = {
     {1, 1, 1, 1, 1, 1, 1, 1},
@@ -175,7 +168,7 @@ void move_player(Player& player, double dirX, double dirY) {
     double newX = player.x + dirX * MOVEMENT_SPEED;
     double newY = player.y + dirY * MOVEMENT_SPEED;
 
-    // Detect collision
+    /* Detect collision */
 
     /* check if the space the player is trying to move to 
     along the y-axis) is not blocked */
@@ -300,17 +293,36 @@ int main( int argc, char* args[] ) {
                 player.planeY = player.dirX * 0.66;
 
                 // Handle player movement
+                double moveX = 0;
+                double moveY = 0;
                 if (key_state[SDL_SCANCODE_W]) {
-                    move_player(player, player.dirX, player.dirY);
+                    moveX += player.dirX;
+                    moveY += player.dirY;
+                    // move_player(player, player.dirX, player.dirY);
                 }
                 if (key_state[SDL_SCANCODE_S]) {
-                    move_player(player, -player.dirX, -player.dirY);
+                    moveX -= player.dirX;
+                    moveY -= player.dirY;
+                    // move_player(player, -player.dirX, -player.dirY);
                 }
                 if (key_state[SDL_SCANCODE_D]) {
-                    move_player(player, -player.dirY, player.dirX);
+                    moveX -= player.dirY;
+                    moveY += player.dirX;
+
+                    
+                    // move_player(player, -player.dirY, player.dirX);
                 }
                 if (key_state[SDL_SCANCODE_A]) {
-                    move_player(player, player.dirY, -player.dirX);
+                    moveX += player.dirY;
+                    moveY -= player.dirX;
+                    // move_player(player, player.dirY, -player.dirX);
+                }
+
+                if (moveX != 0 || moveY != 0) {
+                    double length = sqrt(moveX * moveX + moveY * moveY);
+                    moveX /= length;
+                    moveY /= length;
+                    move_player(player, moveX, moveY);
                 }
 
                 render(renderer, player);
