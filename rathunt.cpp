@@ -20,11 +20,19 @@ const double MOUSE_SENSITIVITY = 0.002;
 
 // Movement constant
 const double MOVEMENT_SPEED = 0.05;
+const double COLLISION_MARGIN = 0.1;
 
 const int TEXTURE_WIDTH = 64;
 const int TEXTURE_HEIGHT = 64;
 const int NUM_TEXTURES = 4;
-
+ // Load floor texture
+    SDL_Surface* floor_surface = IMG_Load("greystone.png");
+    if(!floor_surface) {
+        printf("Failed to load floor texture: %s\n", SDL_GetError());
+        exit(1);
+    }
+    textures[NUM_TEXTURES - 1] = SDL_CreateTextureFromSurface(renderer, floor_surface);
+    SDL_FreeSurface(floor_surface);
 // Define map
 std::vector<std::vector<int>> map = {
     {1, 1, 1, 1, 1, 1, 1, 1},
@@ -58,17 +66,23 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
     int mapX = static_cast<int>(player.x);
 	int mapY = static_cast<int>(player.y);
 
+    // Distance ray has to travel from start pos to the 1st x-side & y-side
     double sideDistX;
 	double sideDistY;
 
+    // distance ray has to travel to go from 1 x-side to the next, or for y
     double deltaDistX = std::abs(1 / rayDirX);
 	double deltaDistY = std::abs(1 / rayDirY);
-	double perpWallDist;
+	double perpWallDist; // used to calculate length of the ray
 
-    int stepX, stepY;
+    // What direction to step in x or y-direction (either +1 or -1)
+    int stepX;
+    int stepY;
+
     int hitWall = 0;
-    int side;
+    int side; // was a NS or a EW wall hit?
 
+    // calculate step and initial sideDist
     if (rayDirX < 0) {
 		stepX = -1;
 		sideDistX = (player.x - mapX) * deltaDistX;
@@ -85,7 +99,9 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
         sideDistY = (mapY + 1.0 - player.y) * deltaDistY;
     }
 
+    // perform DDA
     while (hitWall == 0) {
+        // jump to next map square, either in x-direction, or in y-direction
         if (sideDistX < sideDistY) {
             sideDistX += deltaDistX;
             mapX += stepX;
@@ -95,16 +111,21 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
             mapY += stepY;
             side = 1;
         }
+        // Check if ray has hit a wall
         if (map[mapY][mapX] > 0) hitWall = 1;
     }
 
+    // Calculate distance projected on camera direction (Euclidean distance would give fisheye effect!)
     if (side == 0) {
         perpWallDist = (mapX - player.x + (1 - stepX) / 2) / rayDirX;
     } else {
         perpWallDist = (mapY - player.y + (1 - stepY) / 2) / rayDirY;
     }
 
+    // Calculate height of line to draw on screen
     int lineHeight = static_cast<int>(SCREEN_HEIGHT / perpWallDist);
+
+    // Calculate lowest and highest pixel to fill in current stripe
     int drawStart = -lineHeight / 2 + SCREEN_HEIGHT / 2;
     if (drawStart < 0) drawStart = 0;
     int drawEnd = lineHeight / 2 + SCREEN_HEIGHT / 2;
@@ -137,6 +158,17 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
     // Drawing floor
     SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
     SDL_RenderDrawLine(renderer, x, y2, x, SCREEN_HEIGHT);
+
+    ///////////////////
+
+
+}
+
+bool isWall(int x, int y) {
+    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) {
+        return true; // Treat out of bounds as wall
+    }
+    return map[y][x] != 0;
 }
 
 void move_player(Player& player, double dirX, double dirY) {
@@ -168,11 +200,13 @@ void loadTextures(SDL_Renderer* renderer) {
     }
     weaponTexture = SDL_CreateTextureFromSurface(renderer, weaponSurface);
     SDL_FreeSurface(weaponSurface);
+
+
 }
 
 void renderWeapon(SDL_Renderer* renderer) {
-    int weaponWidth = SCREEN_WIDTH / 2;
-    int weaponHeight = SCREEN_HEIGHT / 2;
+    int weaponWidth = (SCREEN_WIDTH / 2) - 40;
+    int weaponHeight = (SCREEN_HEIGHT / 2) - 40;
     int weaponX = (SCREEN_WIDTH - weaponWidth) / 2;
     int weaponY = SCREEN_HEIGHT - weaponHeight;
 
@@ -180,12 +214,17 @@ void renderWeapon(SDL_Renderer* renderer) {
     SDL_RenderCopy(renderer, weaponTexture, NULL, &dstRect);
 }
 
+
+
+
 void render(SDL_Renderer* renderer, const Player& player) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
 
+
     for (int x = 0; x < NUM_RAYS; x++) {
-        double cameraX = 2 * x / static_cast<double>(SCREEN_WIDTH) - 1;
+        // Calculate ray position and direction
+        double cameraX = 2 * x / static_cast<double>(SCREEN_WIDTH) - 1; // x-coordinate in camea space
         double rayDirX = player.dirX + player.planeX * cameraX;
         double rayDirY = player.dirY + player.planeY * cameraX;
         double rayAngle = atan2(rayDirY, rayDirX);
@@ -193,6 +232,7 @@ void render(SDL_Renderer* renderer, const Player& player) {
     }
 
     renderWeapon(renderer);
+    
 
     SDL_RenderPresent(renderer);
 }
@@ -219,7 +259,9 @@ int main( int argc, char* args[] ) {
             SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
             
             loadTextures(renderer);
+
             Player player;
+
 
             // get relative motion data in SDL_MOUSEMOTION events.
             SDL_SetRelativeMouseMode(SDL_TRUE);
@@ -273,7 +315,9 @@ int main( int argc, char* args[] ) {
 
                 render(renderer, player);
                 
+                
             }
+
             SDL_DestroyTexture(weaponTexture);
             for (int i = 0; i < NUM_TEXTURES; i++) {
                 SDL_DestroyTexture(textures[i]);
@@ -285,6 +329,8 @@ int main( int argc, char* args[] ) {
 
     //Destroy window
     SDL_DestroyWindow( window );
+    IMG_Quit();
+    SDL_Quit();
 
     //Quit SDL subsystems
     SDL_Quit();
