@@ -43,7 +43,7 @@ If you'd like to contribute to this project, please follow these steps:
 4. Submit a pull request with a detailed description of your changes  
 
 ## Screenshot
-![screenshot](https://github.com/ViktorOnyedim/rathunt/assets/tree/main/screenshot.png)
+![screenshot](/assets/screenshot.png)
 
 ## Related Projects
 
