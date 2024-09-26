@@ -3,14 +3,17 @@
 #include <stdio.h>
 #include <cmath>
 #include<vector>
-using namespace std;
+#include <string>
+#include <fstream>
+#include <stdexcept>
+#include <iostream>
 
 //Screen dimension constants
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
-const int MAP_WIDTH = 8;
-const int MAP_HEIGHT = 8;
+// const int MAP_WIDTH = 8;
+// const int MAP_HEIGHT = 8;
 const double FOV = 60 * M_PI / 180;
 const int NUM_RAYS = SCREEN_WIDTH;
 
@@ -27,16 +30,16 @@ const int TEXTURE_HEIGHT = 64;
 const int NUM_TEXTURES = 4;
 
 // Define map
-std::vector<std::vector<int>> map = {
-    {1, 1, 1, 1, 1, 1, 1, 1},
-	{1, 0, 0, 0, 0, 0, 0, 1},
-	{1, 0, 1, 1, 0, 1, 0, 1},
-	{1, 0, 1, 1, 1, 0, 0, 1},
-	{1, 0, 1, 0, 1, 0, 0, 1},
-	{1, 0, 1, 1, 1, 0, 0, 1},
-	{1, 0, 0, 0, 0, 0, 0, 1},
-	{1, 1, 1, 1, 1, 1, 1, 1}
-};
+// std::vector<std::vector<int>> map = {
+//     {1, 1, 1, 1, 1, 1, 1, 1},
+// 	{1, 0, 0, 0, 0, 0, 0, 1},
+// 	{1, 0, 1, 1, 0, 1, 0, 1},
+// 	{1, 0, 1, 1, 1, 0, 0, 1},
+// 	{1, 0, 1, 0, 1, 0, 0, 1},
+// 	{1, 0, 1, 1, 1, 0, 0, 1},
+// 	{1, 0, 0, 0, 0, 0, 0, 1},
+// 	{1, 1, 1, 1, 1, 1, 1, 1}
+// };
 
 // player's position on the map
 struct Player {
@@ -50,7 +53,58 @@ struct Player {
     double planeY = 0.66;
 };
 
+class Map {
+public:
+    std::vector<std::vector<int>> data;
+    int width = 0;
+    int height = 0;
 
+    void loadFromFile(const std::string& filename) {
+        std::ifstream file(filename);
+        if (!file.is_open()) {
+            throw std::runtime_error("Unable to open file: " + filename);
+        }
+
+        std::string line;
+        while (std::getline(file, line)) {
+            if (line.empty() || line[0] == '3') continue; // Skip empty lines and comments
+
+            std::vector<int> row;
+            for (char c : line) {
+                if (c == '#') {
+                    row.push_back(1); // Wall
+                } else if (c == '.') {
+                    row.push_back(0); // Empty space
+                } else {
+                    throw std::runtime_error("Invalid character in map file: " + std::string(1, c));
+                }
+            }
+
+            if (!data.empty() && row.size() != data[0].size()) {
+                throw std::runtime_error("Inconsistent row length in map file");
+            }
+
+            data.push_back(row);
+        }
+
+        if (data.empty()) {
+            throw std::runtime_error("Empty map file");
+        }
+
+        height = data.size();
+        width = data[0].size();
+    }
+
+    bool isWall(int x, int y) const {
+        if (x < 0 || x >= width || y < 0 || y >= height) {
+            return true;  // Treat out of bounds as walls
+        }
+        return data[y][x] != 0;
+    }
+};
+
+
+Map map;
 
 void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int rayNum) {
     double rayDirX = cos(rayAngle);
@@ -105,7 +159,7 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
             side = 1;
         }
         // Check if ray has hit a wall
-        if (map[mapY][mapX] > 0) hitWall = 1;
+        if (map.isWall(mapX, mapY)) hitWall = 1;
     }
 
     // Calculate distance projected on camera direction (Euclidean distance would give fisheye effect!)
@@ -152,17 +206,9 @@ void castRay(SDL_Renderer* renderer, const Player& player, double rayAngle, int 
     SDL_SetRenderDrawColor(renderer, 100, 100, 100, 255);
     SDL_RenderDrawLine(renderer, x, y2, x, SCREEN_HEIGHT);
 
-    ///////////////////
-
-
 }
 
-bool isWall(int x, int y) {
-    if (x < 0 || x >= MAP_WIDTH || y < 0 || y >= MAP_HEIGHT) {
-        return true; // Treat out of bounds as wall
-    }
-    return map[y][x] != 0;
-}
+
 
 void move_player(Player& player, double dirX, double dirY) {
     double newX = player.x + dirX * MOVEMENT_SPEED;
@@ -172,11 +218,13 @@ void move_player(Player& player, double dirX, double dirY) {
 
     /* check if the space the player is trying to move to 
     along the y-axis) is not blocked */
-    if (map[newY][player.x] == 0) {
-        player.y = newY;
-    }
-    if (map[player.y][newX] == 0) {
+
+
+    if (!map.isWall(static_cast<int>(newX), static_cast<int>(player.y))) {
         player.x = newX;
+    }
+    if (!map.isWall(static_cast<int>(player.x), static_cast<int>(newY))) {
+        player.y = newY;
     }
 }
 
@@ -208,8 +256,6 @@ void renderWeapon(SDL_Renderer* renderer) {
 }
 
 
-
-
 void render(SDL_Renderer* renderer, const Player& player) {
     SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
     SDL_RenderClear(renderer);
@@ -232,6 +278,19 @@ void render(SDL_Renderer* renderer, const Player& player) {
 
 
 int main( int argc, char* args[] ) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << args[0] << " <map_file_path>" << std::endl;
+        return 1;
+    }
+
+    
+    try {
+        map.loadFromFile(args[1]);
+    } catch (const std::exception& e) {
+        std::cerr << "Error loading map: " << e.what() << std::endl;
+        return 1;
+    }
+
     //The window we'll be rendering to
     SDL_Window* window = NULL;
 
