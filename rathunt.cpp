@@ -29,6 +29,14 @@ const int TEXTURE_WIDTH = 64;
 const int TEXTURE_HEIGHT = 64;
 const int NUM_TEXTURES = 4;
 
+
+const int MINIMAP_SIZE = 100;
+const int MINIMAP_X = 10;
+const int MINIMAP_Y = 10;
+const double MINIMAP_SCALE = 1;
+
+
+
 // Define map
 // std::vector<std::vector<int>> map = {
 //     {1, 1, 1, 1, 1, 1, 1, 1},
@@ -254,6 +262,81 @@ void renderWeapon(SDL_Renderer* renderer)
 }
 
 
+
+
+bool show_minimap = true;
+
+void toggle_minimap()
+{
+	show_minimap = !show_minimap;
+}
+
+void draw_minimap(SDL_Renderer* renderer, const Player& player, const Map& map) {
+    if (!show_minimap) {
+        std::cout << "Minimap is not shown" << std::endl;
+        return;
+    }
+    
+    std::cout << "Drawing minimap..." << std::endl;
+
+    /* Save current renderer state */
+    SDL_BlendMode oldBlendMode;
+    SDL_GetRenderDrawBlendMode(renderer, &oldBlendMode);
+    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+
+    /* Draw background (semi-transparent black) */
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 192);
+    SDL_Rect minimap_rect = {MINIMAP_X, MINIMAP_Y, MINIMAP_SIZE, MINIMAP_SIZE};
+    SDL_RenderFillRect(renderer, &minimap_rect);
+
+    /* Draw walls */ 
+    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+    int walls_drawn = 0;
+    for (int y = 0; y < map.height; y++) {
+        for (int x = 0; x < map.width; x++) {
+            if (map.isWall(x, y)) {
+                SDL_Rect wall_rect = {
+                    MINIMAP_X + static_cast<int>(x * MINIMAP_SCALE * MINIMAP_SIZE / map.width),
+                    MINIMAP_Y + static_cast<int>(y * MINIMAP_SCALE * MINIMAP_SIZE / map.height),
+                    std::max(static_cast<int>(MINIMAP_SCALE * MINIMAP_SIZE / map.width), 1),
+                    std::max(static_cast<int>(MINIMAP_SCALE * MINIMAP_SIZE / map.height), 1)
+                };
+                SDL_RenderFillRect(renderer, &wall_rect);
+                walls_drawn++;
+            }
+        }
+    }
+    std::cout << "Walls drawn: " << walls_drawn << std::endl;
+
+    /* Draw player */
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    SDL_Rect player_rect = {
+        MINIMAP_X + static_cast<int>(player.x * MINIMAP_SCALE * MINIMAP_SIZE / map.width) - 3,
+        MINIMAP_Y + static_cast<int>(player.y * MINIMAP_SCALE * MINIMAP_SIZE / map.height) - 3,
+        6, 6
+    };
+    SDL_RenderFillRect(renderer, &player_rect);
+
+    /* Draw player's line of sight */
+    SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+	int lineLength = 1;
+    SDL_RenderDrawLine(renderer,
+        MINIMAP_X + static_cast<int>(player.x * MINIMAP_SCALE * MINIMAP_SIZE / map.width),
+        MINIMAP_Y + static_cast<int>(player.y * MINIMAP_SCALE * MINIMAP_SIZE / map.height),
+        MINIMAP_X + static_cast<int>((player.x + cos(player.angle) * lineLength) * MINIMAP_SCALE * MINIMAP_SIZE / map.width),
+        MINIMAP_Y + static_cast<int>((player.y + sin(player.angle) * lineLength) * MINIMAP_SCALE * MINIMAP_SIZE / map.height)
+    );
+
+    /* Restore old blend mode */
+    SDL_SetRenderDrawBlendMode(renderer, oldBlendMode);
+
+    std::cout << "Minimap drawing completed" << std::endl;
+    std::cout << "Player position: (" << player.x << ", " << player.y << ")" << std::endl;
+    std::cout << "Player angle: " << player.angle << std::endl;
+    std::cout << "Map dimensions: " << map.width << "x" << map.height << std::endl;
+}
+
+
 void render(SDL_Renderer* renderer, const Player& player) 
 {
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -271,10 +354,14 @@ void render(SDL_Renderer* renderer, const Player& player)
 	}
 
 	renderWeapon(renderer);
+
+	draw_minimap(renderer, player, map);
+
 	
 
 	SDL_RenderPresent(renderer);
 }
+
 
 
 int main( int argc, char* args[] )
@@ -295,10 +382,9 @@ int main( int argc, char* args[] )
 		return 1;
 	}
 
-	//The window we'll be rendering to
 	SDL_Window* window = NULL;
 
-	//Initialize SDL
+	/* Initialize SDL */
 	if ( SDL_Init( SDL_INIT_VIDEO ) < 0 )
 	{
 		printf( "SDL could not initialize! SDL_Error: %s\n", SDL_GetError() );
@@ -319,13 +405,13 @@ int main( int argc, char* args[] )
 			Player player;
 
 
-			// get relative motion data in SDL_MOUSEMOTION events.
+			/* get relative motion data in SDL_MOUSEMOTION events. */
 			SDL_SetRelativeMouseMode(SDL_TRUE);
 
-			//
+			
 			const Uint8* key_state = SDL_GetKeyboardState(NULL);
 
-			//Hack to get window to stay up
+			
 			SDL_Event e;
 		
 			bool quit = false;
@@ -343,19 +429,26 @@ int main( int argc, char* args[] )
 							break;
 						case SDLK_RIGHT:
 							player.angle += ROTATION_SPEED;
+							break;
+						case SDLK_m:
+							toggle_minimap();
+							break;
 						default:
 							break;
 						}
 					}
 				} 
 
-				// Update player direction and camera plane
+				/* Update player direction and camera plane */
 				player.dirX = cos(player.angle);
 				player.dirY = sin(player.angle);
 				player.planeX = -player.dirY * 0.66;
 				player.planeY = player.dirX * 0.66;
 
-				// Handle player movement
+				player.angle = fmod(player.angle, 2 * M_PI);
+				if (player.angle < 0) player.angle += 2 * M_PI;
+
+				/* Handle player movement */
 				double moveX = 0;
 				double moveY = 0;
 				if (key_state[SDL_SCANCODE_W]) {
@@ -388,9 +481,8 @@ int main( int argc, char* args[] )
 					move_player(player, moveX, moveY);
 				}
 
+
 				render(renderer, player);
-				
-				
 			}
 
 			SDL_DestroyTexture(weaponTexture);
@@ -402,12 +494,11 @@ int main( int argc, char* args[] )
 	}
 	
 
-	//Destroy window
 	SDL_DestroyWindow( window );
 	IMG_Quit();
 	SDL_Quit();
 
-	//Quit SDL subsystems
+	/* Quit SDL subsystems */
 	SDL_Quit();
 
 	return 0;
