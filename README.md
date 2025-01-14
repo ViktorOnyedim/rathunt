@@ -2,7 +2,7 @@
 
 ## Introduction
 This project is a C++ implementation of a raycasting engine, inspired by the classic game Wolfenstein 3D. The engine features 3D rendering of walls, a first-person perspective, and the ability to add sprite-based enemies to the game world.  
-The final project can be accessed at https://github.com/ViktorOnyedim/rathunt and a detailed blog article about the development process is available at https://www.linkedin.com/in/viktor-onyedim. The project was created by Victor Onyedim and you can connect with the author on https://www.linkedin.com/in/viktor-onyedim.
+The final project can be accessed at https://github.com/ViktorOnyedim/rathunt. The project was created by Victor Onyedim and you can connect with the author on https://www.linkedin.com/in/viktor-onyedim.
 
 ## Installation
 To run the raycasting engine, you'll need to have the following dependencies installed:
